@@ -11,7 +11,11 @@ h1 { font-size: 1.1rem; margin: 0; }
 button, input { font: inherit; border: 1px solid #30363d; border-radius: 4px; background: #21262d; color: inherit; padding: .4rem .9rem; }
 button:hover:not(:disabled) { background: #30363d; cursor: pointer; }
 button:disabled, input:disabled { opacity: .5; }
+#connect:disabled { cursor: wait; }
 input { flex: 1; font-family: ui-monospace, Consolas, monospace; background: #010409; }
-#terminal { flex: 1; margin: 0; overflow-y: auto; background: #010409; border: 1px solid #30363d; border-radius: 4px; padding: .6rem; font-family: ui-monospace, Consolas, monospace; font-size: .9rem; white-space: pre-wrap; word-break: break-all; color: #3fb950; }
+.connection-details { border: 1px solid #30363d; border-radius: 4px; padding: .6rem .75rem; background: #161b22; }
+.connection-details strong { font-size: .8rem; color: #8b949e; text-transform: uppercase; letter-spacing: .04em; }
+.connection-details p { margin: .25rem 0 0; }
+#terminal { flex: 1; min-height: 0; margin: 0; overflow-y: auto; background: #010409; border: 1px solid #30363d; border-radius: 4px; padding: .6rem; font-family: ui-monospace, Consolas, monospace; font-size: .9rem; white-space: pre-wrap; word-break: break-all; color: #3fb950; }
 .info { color: #8b949e; }
 .error { color: #f85149; }
