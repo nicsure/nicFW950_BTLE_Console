@@ -1,53 +1,62 @@
 # nicFW950 BLE Console
 
-A minimal browser console for talking ASCII to a custom embedded device over Bluetooth Low Energy (Web Bluetooth). It is intentionally just a terminal: no radio programming, codeplug handling, binary protocols, firmware flashing, configuration screens or authentication.
+A minimal browser terminal for sending ASCII commands to a custom embedded device over Bluetooth Low Energy (BLE). The interface stays focused on connecting, sending commands, and viewing device output.
 
-## BLE details
+## BLE connection
 
-| Item | Value |
-| --- | --- |
-| Service | `FFE0` (`0000ffe0-0000-1000-8000-00805f9b34fb`) |
-| Characteristic | `FFE1` (`0000ffe1-0000-1000-8000-00805f9b34fb`) |
-| Properties | Read, Write, Notify |
+The device exposes one GATT service and one characteristic:
 
-The same characteristic is used in both directions. The app calls `navigator.bluetooth.requestDevice()` (filtered on service FFE0), connects to GATT, gets service FFE0 and characteristic FFE1, and starts notifications. Notification bytes are decoded as ASCII and appended to the terminal as they arrive (no line framing is assumed). Commands are ASCII-encoded, followed by the line terminator, and written to FFE1 in 20-byte chunks.
+| Item | UUID | Use |
+| --- | --- | --- |
+| Service | `FFE0` | Device console service |
+| Characteristic | `FFE1` | Write commands and receive notifications |
 
-## Requirements
+The app asks you to select a device advertising service FFE0, connects to its GATT server, finds FFE0/FFE1, and subscribes to notifications. The same FFE1 characteristic carries both outgoing writes and incoming notification data.
 
-- A browser with Web Bluetooth: Chrome, Edge or Opera (desktop/Android). Firefox and Safari do not support it.
-- A secure context: `http://localhost` works for development; production deployment **must use HTTPS**.
-- Node.js 18+ for building.
+Notification bytes are decoded as ASCII and appended as they arrive. Notifications are not treated as complete lines or messages. Outgoing commands are ASCII-encoded and sent in small chunks.
+
+## Browser requirements
+
+Use a browser that implements Web Bluetooth, such as desktop Chrome or Edge. Web Bluetooth requires a secure context: `http://localhost` is allowed for local development, and production sites must use HTTPS. The device chooser opens only after you press Connect. The device must be advertising the FFE0 service to appear in the chooser.
+
+Web Bluetooth is not available in Firefox or Safari, and iOS browsers do not support this app's BLE workflow.
 
 ## Run locally
 
-```sh
-npm install
-npm run dev
+No Node.js, package installation, or build step is needed. From the repository root, start a local static server:
+
+**Windows**
+
+```powershell
+py -m http.server 8000
 ```
 
-Open the printed `http://localhost:5173` URL in Chrome/Edge.
-
-## Build for deployment
+**macOS / Linux**
 
 ```sh
-npm run build
+python3 -m http.server 8000
 ```
 
-Serve the contents of `dist/` from any static host over HTTPS. `npm run preview` serves the build locally.
+Then open [http://localhost:8000](http://localhost:8000) in a supported browser.
 
-## Limitations of Web Bluetooth
+## Deploy
 
-- Device selection needs a user gesture (the Connect button) and always shows the browser chooser; there is no silent auto-reconnect.
-- No Bluetooth support in Firefox/Safari; iOS browsers are unsupported.
-- Write size is limited by the negotiated MTU, so data is sent in small chunks; throughput is modest.
-- BLE is not a true stream: notifications can split or merge lines.
+This is a static site. Publish the repository root (which contains `index.html`) on GitHub Pages or another static host that serves HTTPS. Stylesheets and JavaScript use relative paths so they work under the repository's GitHub Pages URL.
 
-## Line termination
+## Theme
 
-Edit `LINE_TERMINATOR` in [`src/config.ts`](src/config.ts) (default `"\r"`; use `"\n"` for LF or `"\r\n"` for CRLF).
+The page follows the browser's system color preference by default. Use the **Light mode** and **Dark mode** buttons to choose a theme manually; the selection is saved in local storage.
+
+## Command line termination
+
+Edit the single `LINE_TERMINATOR` constant in [`src/config.js`](src/config.js). It is set to CRLF (`"\r\n"`) initially. Change it to `"\r"` for CR or `"\n"` for LF.
 
 ## Structure
 
-- `src/transport/Transport.ts` – transport interface (`connect`, `disconnect`, `send`, `onData`, `onStateChange`, `state`).
-- `src/transport/BleTransport.ts` – Web Bluetooth implementation. A Web Serial transport can implement the same interface later.
-- `src/main.ts` – terminal UI; depends only on `Transport`.
+- `index.html` – Page markup and relative static asset links.
+- `src/main.js` – Terminal interface, theme controls, and form handling.
+- `src/config.js` – Line terminator, UUIDs, and BLE write chunk size.
+- `src/transport/Transport.js` – Small transport contract.
+- `src/transport/BleTransport.js` – Web Bluetooth GATT connection and byte-stream handling.
+
+Web Serial, radio programming, binary protocols, firmware updates, and device configuration are outside the scope of this console.
