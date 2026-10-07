@@ -6,6 +6,7 @@ import type { ConnectionState, Transport } from "./transport/Transport";
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const terminal = $<HTMLPreElement>("terminal");
 const statusEl = $<HTMLSpanElement>("status");
+const connectionDetailEl = $<HTMLParagraphElement>("connection-detail");
 const connectBtn = $<HTMLButtonElement>("connect");
 const disconnectBtn = $<HTMLButtonElement>("disconnect");
 const clearBtn = $<HTMLButtonElement>("clear");
@@ -35,26 +36,24 @@ function info(text: string, cls = "info") {
   append(text + "\n", cls);
 }
 
-function render(state: ConnectionState) {
+function render(state: ConnectionState, message?: string) {
   const labels = { disconnected: "Disconnected", connecting: "Connecting…", connected: "Connected" };
   statusEl.textContent = labels[state];
   statusEl.className = `status ${state}`;
   connectBtn.disabled = state !== "disconnected";
-  disconnectBtn.disabled = state === "disconnected";
+  connectBtn.textContent = state === "connecting" ? "Connecting…" : "Connect";
+  disconnectBtn.disabled = state !== "connected";
   input.disabled = sendBtn.disabled = state !== "connected";
+  if (message) connectionDetailEl.textContent = message;
   if (state === "connected") input.focus();
 }
 
 transport.onData = (data) => append(decoder.decode(data, { stream: true }));
-transport.onStateChange = (state, message) => {
-  render(state);
-  if (message) info(message, "error");
-};
+transport.onStateChange = (state, message) => render(state, message);
 
 connectBtn.addEventListener("click", async () => {
   try {
     await transport.connect();
-    info("Connected.");
   } catch (e) {
     info(e instanceof Error ? e.message : String(e), "error");
   }
@@ -77,7 +76,9 @@ form.addEventListener("submit", async (ev) => {
   }
 });
 
-render(transport.state);
+render(transport.state, "Disconnected. Select Connect to choose a Bluetooth device.");
 if (!navigator.bluetooth) {
-  info("Web Bluetooth is not available. Use Chrome/Edge over HTTPS or http://localhost.", "error");
+  const message = "Web Bluetooth is unavailable. Use Chrome or Edge in a secure context (HTTPS or localhost).";
+  render("disconnected", message);
+  info(message, "error");
 }

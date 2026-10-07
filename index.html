@@ -16,6 +16,10 @@
         <button id="disconnect" type="button" disabled>Disconnect</button>
         <button id="clear" type="button">Clear</button>
       </div>
+      <section class="connection-details" aria-label="Bluetooth connection details">
+        <strong>Connection details</strong>
+        <p id="connection-detail" role="status" aria-live="polite">Disconnected. Select Connect to choose a Bluetooth device.</p>
+      </section>
       <pre id="terminal" aria-live="polite"></pre>
       <form id="send-form" autocomplete="off">
         <input id="command" type="text" placeholder="Enter command" spellcheck="false" disabled />

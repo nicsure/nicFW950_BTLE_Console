@@ -28,7 +28,7 @@ export class BleTransport implements Transport {
 
   private readonly handleDisconnected = () => {
     this.cleanup();
-    this.setState("disconnected", "Device disconnected");
+    this.setState("disconnected", "Device disconnected. Select Connect to reconnect.");
   };
 
   private cleanup() {
@@ -40,8 +40,14 @@ export class BleTransport implements Transport {
 
   async connect(): Promise<void> {
     if (this.state !== "disconnected") return;
+
+    // Set connecting before opening the browser picker so repeated clicks are blocked
+    // and the user can see that the request is waiting for device selection.
+    this.setState("connecting", "Waiting for Bluetooth device selection…");
     if (!navigator.bluetooth) {
-      throw new Error("Web Bluetooth is not supported in this browser (or the page is not a secure context).");
+      const message = "Web Bluetooth is unavailable. Use Chrome or Edge in a secure context (HTTPS or localhost).";
+      this.setState("disconnected", message);
+      throw new Error(message);
     }
 
     let device: BluetoothDevice;
@@ -50,33 +56,39 @@ export class BleTransport implements Transport {
         filters: [{ services: [SERVICE_UUID] }],
       });
     } catch (e) {
-      if (e instanceof DOMException && e.name === "NotFoundError") {
-        throw new Error("Device selection cancelled.");
-      }
-      throw e;
+      const cancelled = e instanceof DOMException && e.name === "NotFoundError";
+      const message = cancelled
+        ? "Device selection cancelled. Select Connect to try again."
+        : `Bluetooth device selection failed: ${errMsg(e)}`;
+      this.setState("disconnected", message);
+      throw new Error(message);
     }
 
-    this.setState("connecting");
     this.device = device;
     device.addEventListener("gattserverdisconnected", this.handleDisconnected);
     try {
+      this.setState("connecting", `${device.name || "Bluetooth device"} selected. Connecting to GATT server…`);
       const server = await device.gatt!.connect();
+
+      this.setState("connecting", "GATT connected. Discovering service FFE0…");
       const service = await server.getPrimaryService(SERVICE_UUID);
+
+      this.setState("connecting", "Service FFE0 found. Looking up characteristic FFE1…");
       this.characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
       this.characteristic.addEventListener("characteristicvaluechanged", this.handleNotification);
-      try {
-        await this.characteristic.startNotifications();
-      } catch (e) {
-        throw new Error(`Failed to start notifications: ${errMsg(e)}`);
-      }
+
+      this.setState("connecting", "Characteristic FFE1 found. Enabling notifications…");
+      await this.characteristic.startNotifications();
+
+      this.setState("connected", `Connected to ${device.name || "Bluetooth device"}; notifications are active.`);
     } catch (e) {
       const dev = this.device;
       this.cleanup();
       if (dev?.gatt?.connected) dev.gatt.disconnect();
-      this.setState("disconnected");
-      throw new Error(`Connection failed: ${errMsg(e)}`);
+      const message = `Connection failed: ${errMsg(e)}`;
+      this.setState("disconnected", message);
+      throw new Error(message);
     }
-    this.setState("connected");
   }
 
   async disconnect(): Promise<void> {
@@ -84,7 +96,7 @@ export class BleTransport implements Transport {
     if (!dev) return;
     this.cleanup();
     if (dev.gatt?.connected) dev.gatt.disconnect();
-    this.setState("disconnected");
+    this.setState("disconnected", "Disconnected. Select Connect to connect to a device.");
   }
 
   async send(data: Uint8Array): Promise<void> {
