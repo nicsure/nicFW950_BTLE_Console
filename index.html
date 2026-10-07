@@ -3,8 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>nicFW950 BLE Console</title>
     <link rel="stylesheet" href="./src/style.css" />
+    <script type="module" src="./src/main.js"></script>
   </head>
   <body>
     <main>
@@ -34,47 +36,5 @@
         <button id="send" type="submit" disabled>Send</button>
       </form>
     </main>
-    <script>
-      (() => {
-        const lightButton = document.getElementById("light-mode");
-        const darkButton = document.getElementById("dark-mode");
-        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
-        let manuallySelected = false;
-
-        function applyTheme(theme) {
-          document.documentElement.dataset.theme = theme;
-          lightButton.setAttribute("aria-pressed", String(theme === "light"));
-          darkButton.setAttribute("aria-pressed", String(theme === "dark"));
-        }
-
-        try {
-          const savedTheme = localStorage.getItem("nicfw950-theme");
-          if (savedTheme === "light" || savedTheme === "dark") {
-            manuallySelected = true;
-            applyTheme(savedTheme);
-          } else {
-            applyTheme(systemTheme.matches ? "dark" : "light");
-          }
-        } catch {
-          applyTheme(systemTheme.matches ? "dark" : "light");
-        }
-
-        lightButton.addEventListener("click", () => {
-          manuallySelected = true;
-          applyTheme("light");
-          try { localStorage.setItem("nicfw950-theme", "light"); } catch {}
-        });
-        darkButton.addEventListener("click", () => {
-          manuallySelected = true;
-          applyTheme("dark");
-          try { localStorage.setItem("nicfw950-theme", "dark"); } catch {}
-        });
-
-        systemTheme.addEventListener("change", (event) => {
-          if (!manuallySelected) applyTheme(event.matches ? "dark" : "light");
-        });
-      })();
-    </script>
-    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
