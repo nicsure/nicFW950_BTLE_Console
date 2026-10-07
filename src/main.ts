@@ -7,50 +7,12 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const terminal = $<HTMLPreElement>("terminal");
 const statusEl = $<HTMLSpanElement>("status");
 const connectionDetailEl = $<HTMLParagraphElement>("connection-detail");
-const themeToggleBtn = $<HTMLButtonElement>("theme-toggle");
 const connectBtn = $<HTMLButtonElement>("connect");
 const disconnectBtn = $<HTMLButtonElement>("disconnect");
 const clearBtn = $<HTMLButtonElement>("clear");
 const form = $<HTMLFormElement>("send-form");
 const input = $<HTMLInputElement>("command");
 const sendBtn = $<HTMLButtonElement>("send");
-
-type ThemePreference = "light" | "dark";
-const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
-const themeStorageKey = "nicfw950-theme";
-let themePreference: ThemePreference | null = null;
-
-try {
-  const savedTheme = localStorage.getItem(themeStorageKey);
-  if (savedTheme === "light" || savedTheme === "dark") themePreference = savedTheme;
-} catch {
-  // Theme selection still works for this page load when storage is unavailable.
-}
-
-function applyTheme(preference: ThemePreference | null) {
-  if (preference) document.documentElement.dataset.theme = preference;
-  else delete document.documentElement.dataset.theme;
-
-  const isDark = preference ? preference === "dark" : systemTheme.matches;
-  const nextTheme = isDark ? "light" : "dark";
-  themeToggleBtn.textContent = `Use ${nextTheme} theme`;
-  themeToggleBtn.setAttribute("aria-label", `Switch to ${nextTheme} theme`);
-}
-
-applyTheme(themePreference);
-systemTheme.addEventListener("change", () => {
-  if (!themePreference) applyTheme(null);
-});
-themeToggleBtn.addEventListener("click", () => {
-  const currentlyDark = themePreference ? themePreference === "dark" : systemTheme.matches;
-  themePreference = currentlyDark ? "light" : "dark";
-  try {
-    localStorage.setItem(themeStorageKey, themePreference);
-  } catch {
-    // Keep the selected theme for this page load when storage is unavailable.
-  }
-  applyTheme(themePreference);
-});
 
 const transport: Transport = new BleTransport();
 const decoder = new TextDecoder("ascii");
