@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nicFW950 BLE Console</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>nicFW950 BLE Console</h1>
+        <span id="status" class="status disconnected">Disconnected</span>
+      </header>
+      <div class="toolbar">
+        <button id="connect" type="button">Connect</button>
+        <button id="disconnect" type="button" disabled>Disconnect</button>
+        <button id="clear" type="button">Clear</button>
+      </div>
+      <pre id="terminal" aria-live="polite"></pre>
+      <form id="send-form" autocomplete="off">
+        <input id="command" type="text" placeholder="Enter command" spellcheck="false" disabled />
+        <button id="send" type="submit" disabled>Send</button>
+      </form>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
